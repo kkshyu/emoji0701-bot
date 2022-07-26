@@ -35,6 +35,11 @@ async function handleEvent(event, destination) {
       }
       `,
       variables: { memberId: destination },
+    },
+    {
+      headers: {
+        "content-type": "application/json",
+      },
     }
   );
   const pointUrl = `https://emoji0701.netlify.app?id=${destination}`;
@@ -50,7 +55,7 @@ async function handleEvent(event, destination) {
     },
   ]);
 
-  console.log({ event, destination, graphqlRes, pointUrl, pointUrl, message });
+  console.log({ event, destination, graphqlRes, pointUrl, pointUrl });
   // use reply API
 }
 // listen on port
