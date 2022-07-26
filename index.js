@@ -29,29 +29,18 @@ async function handleEvent(event, destination) {
     query: `mutation INSERT_MEMBER($memberId: String!) { insert_member_one(object: {id: $memberId }) { id }}`,
     variables: { memberId: destination },
   });
-
   const pointUrl = `https://emoji0701.netlify.app?id=${destination}`;
-  const shortenUrl = await axios.post(
-    "https://api.reurl.cc/shorten",
-    { url: pointUrl },
-    {
-      headers: {
-        "Content-Type": "application/json",
-        "reurl-api-key": process.env.REURL_API_KEY,
-      },
-    }
-  );
   await client.replyMessage(event.replyToken, {
     type: "image",
-    originalContentUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${shortenUrl}`,
-    previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${shortenUrl}`,
+    originalContentUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
+    previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
   });
   await client.replyMessage(event.replyToken, {
     type: "text",
-    text: `專屬連結：${shortenUrl}`,
+    text: `專屬連結：${pointUrl}`,
   });
 
-  console.log({ event, destination, pointUrl, shortenUrl, message });
+  console.log({ event, destination, pointUrl, pointUrl, message });
   // use reply API
 }
 // listen on port
