@@ -109,11 +109,14 @@ async function handleEvent(event, destination) {
         },
       }
     );
-    const orders = data?.order?.map((v) => ({
-      title: v.title,
-      usedPoints: v.order_member_points_aggregate?.aggregate?.sum?.points || 0,
-      createdAt: dayjs(v.createdAt),
-    }));
+    console.log({ data });
+    const orders =
+      data?.order?.map((v) => ({
+        title: v.title,
+        usedPoints:
+          v.order_member_points_aggregate?.aggregate?.sum?.points || 0,
+        createdAt: dayjs(v.createdAt),
+      })) || [];
     const memberPoints =
       data?.member_point?.map((v) => ({
         id: v.id,
