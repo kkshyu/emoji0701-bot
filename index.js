@@ -55,15 +55,6 @@ async function handleEvent(event, destination) {
       previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
     },
   ]);
-
-  console.log({
-    event,
-    destination,
-    graphqlRes: JSON.stringify(graphqlRes),
-    pointUrl,
-    pointUrl,
-  });
-  // use reply API
 }
 // listen on port
 const port = process.env.PORT || 3000;
