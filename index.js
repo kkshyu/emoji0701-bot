@@ -100,7 +100,7 @@ async function handleEvent(event, destination) {
             }
           }
         `,
-        variables: { memberId },
+        variables: { memberId: destination },
       },
       {
         headers: {
