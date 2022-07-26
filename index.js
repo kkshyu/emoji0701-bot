@@ -14,7 +14,7 @@ const app = express();
 // about the middleware, please refer to doc
 app.post("/callback", line.middleware(config), (req, res) => {
   console.log(req, res);
-  Promise.all(req.body.events.map(handleEvent))
+  Promise.all(req.body.events.map((event) => handleEvent(event, destination)))
     .then((result) => res.json(result))
     .catch((err) => {
       console.error(err);
@@ -22,13 +22,14 @@ app.post("/callback", line.middleware(config), (req, res) => {
     });
 });
 // event handler
-function handleEvent(event) {
-  if (event.type !== "message" || event.message.type !== "text") {
-    // ignore non-text-message event
-    return Promise.resolve(null);
-  }
+function handleEvent(event, destination) {
   // create a echoing text message
-  const echo = { type: "text", text: event.message.text };
+  const pointUrl = `https://emoji0701.netlify.app?id=${destination}`;
+  const echo = {
+    type: "image",
+    originalContentUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
+    previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
+  };
   // use reply API
   return client.replyMessage(event.replyToken, echo);
 }
