@@ -1,5 +1,6 @@
 // index.js
 const line = require("@line/bot-sdk");
+const gql = require("gql");
 const { default: axios } = require("axios");
 var express = require("express");
 const config = {
@@ -128,28 +129,38 @@ async function handleEvent(event, destination) {
           accum + memberPoint.points - memberPoint.usedPoints,
         0
       );
-    await client.replyMessage(event.replyToken, {
-      type: "text",
-      text: [
-        `目前點數：${currentPoints}`,
-        `-----------------`,
-        `點數紀錄：`,
-        ...memberPoints.map(
-          (memberPoint) =>
-            `${memberPoint.point} 點：${dayjs(memberPoint.endedAt).format(
-              "YYYY/MM/DD"
-            )} 到期，已使用 ${memberPoint.usedPoints} 點`
-        ),
-        `-----------------`,
-        `使用紀錄：`,
-        ...orders.map(
-          (order) =>
-            `${order.title} 於 ${dayjs(order.createdAt).format(
-              "YYYY/MM/DD"
-            )} 使用 ${order.usedPoints}`
-        ),
-      ].join("\n"),
-    });
+    await client.replyMessage(event.replyToken, [
+      {
+        type: "text",
+        text: `目前點數：${currentPoints}`,
+      },
+      {
+        type: "text",
+        text: [
+          `點數紀錄：`,
+          `-----------------`,
+          ...memberPoints.map(
+            (memberPoint) =>
+              `${memberPoint.point} 點：${dayjs(memberPoint.endedAt).format(
+                "YYYY/MM/DD"
+              )} 到期，已使用 ${memberPoint.usedPoints} 點`
+          ),
+        ].join("\n"),
+      },
+      {
+        type: "text",
+        text: [
+          `使用紀錄：`,
+          `-----------------`,
+          ...orders.map(
+            (order) =>
+              `${order.title} 於 ${dayjs(order.createdAt).format(
+                "YYYY/MM/DD"
+              )} 使用 ${order.usedPoints} 點`
+          ),
+        ].join("\n"),
+      },
+    ]);
   } else {
     await client.replyMessage(event.replyToken, {
       type: "text",
