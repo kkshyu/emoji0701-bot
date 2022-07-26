@@ -147,7 +147,7 @@ async function handleEvent(event, destination) {
           `-----------------`,
           ...memberPoints.map(
             (memberPoint) =>
-              `${memberPoint.point} 點：${dayjs(memberPoint.endedAt).format(
+              `${memberPoint.points} 點：${dayjs(memberPoint.endedAt).format(
                 "YYYY/MM/DD"
               )} 到期，已使用 ${memberPoint.usedPoints} 點`
           ),
