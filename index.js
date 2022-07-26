@@ -62,7 +62,9 @@ async function handleEvent(event, destination) {
       },
     ]);
   } else if (event.message.text === "check") {
-    const { data } = await axios.post(
+    const {
+      data: { data, errors },
+    } = await axios.post(
       `https://emoji0701.hasura.app/v1/graphql`,
       {
         query: `
