@@ -25,22 +25,32 @@ app.post("/callback", line.middleware(config), (req, res) => {
 });
 // event handler
 async function handleEvent(event, destination) {
-  await axios.post(`https://emoji0701.hasura.app/v1/graphql`, {
-    query: `mutation INSERT_MEMBER($memberId: String!) { insert_member_one(object: {id: $memberId }) { id }}`,
-    variables: { memberId: destination },
-  });
+  const graphqlRes = await axios.post(
+    `https://emoji0701.hasura.app/v1/graphql`,
+    {
+      query: `mutation INSERT_MEMBER($memberId: String!) {
+        insert_member_one(object: {id: $memberId}, on_conflict: {constraint: member_pkey, update_columns:[]}) {
+          id
+        }
+      }
+      `,
+      variables: { memberId: destination },
+    }
+  );
   const pointUrl = `https://emoji0701.netlify.app?id=${destination}`;
-  await client.replyMessage(event.replyToken, {
-    type: "image",
-    originalContentUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
-    previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
-  });
-  await client.replyMessage(event.replyToken, {
-    type: "text",
-    text: `專屬連結：${pointUrl}`,
-  });
+  await client.replyMessage(event.replyToken, [
+    {
+      type: "text",
+      text: `專屬連結：${pointUrl}`,
+    },
+    {
+      type: "image",
+      originalContentUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
+      previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
+    },
+  ]);
 
-  console.log({ event, destination, pointUrl, pointUrl, message });
+  console.log({ event, destination, graphqlRes, pointUrl, pointUrl, message });
   // use reply API
 }
 // listen on port
