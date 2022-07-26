@@ -25,36 +25,137 @@ app.post("/callback", line.middleware(config), (req, res) => {
 });
 // event handler
 async function handleEvent(event, destination) {
-  const graphqlRes = await axios.post(
-    `https://emoji0701.hasura.app/v1/graphql`,
-    {
-      query: `mutation INSERT_MEMBER($memberId: String!) {
-        insert_member_one(object: {id: $memberId}, on_conflict: {constraint: member_pkey, update_columns:[]}) {
-          id
-        }
-      }
-      `,
-      variables: { memberId: destination },
-    },
-    {
-      headers: {
-        "content-type": "application/json",
-        "x-hasura-admin-secret": process.env.HASURA_ADMIN_SECRET,
+  if (event.message.text === "code") {
+    await axios.post(
+      `https://emoji0701.hasura.app/v1/graphql`,
+      {
+        query: gql`
+          mutation INSERT_MEMBER($memberId: String!) {
+            insert_member_one(
+              object: { id: $memberId }
+              on_conflict: { constraint: member_pkey, update_columns: [] }
+            ) {
+              id
+            }
+          }
+        `,
+        variables: { memberId: destination },
       },
-    }
-  );
-  const pointUrl = `https://emoji0701.netlify.app?id=${destination}`;
-  await client.replyMessage(event.replyToken, [
-    {
+      {
+        headers: {
+          "content-type": "application/json",
+          "x-hasura-admin-secret": process.env.HASURA_ADMIN_SECRET,
+        },
+      }
+    );
+    const pointUrl = `https://emoji0701.netlify.app?id=${destination}`;
+    await client.replyMessage(event.replyToken, [
+      {
+        type: "text",
+        text: `專屬連結：${pointUrl}`,
+      },
+      {
+        type: "image",
+        originalContentUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
+        previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
+      },
+    ]);
+  } else if (event.message.text === "check") {
+    const { data } = await axios.post(
+      `https://emoji0701.hasura.app/v1/graphql`,
+      {
+        query: gql`
+          query GET_MEMBER_POINTS($memberId: String!) {
+            order(
+              where: {
+                order_member_points: {
+                  member_point: { member_id: { _eq: $memberId } }
+                }
+              }
+            ) {
+              title
+              order_member_points_aggregate {
+                aggregate {
+                  sum {
+                    points
+                  }
+                }
+              }
+            }
+            member_point(
+              where: { member_id: { _eq: $memberId } }
+              order_by: [{ ended_at: asc }]
+            ) {
+              id
+              ended_at
+              points
+              order_member_points_aggregate {
+                aggregate {
+                  sum {
+                    points
+                  }
+                }
+              }
+            }
+          }
+        `,
+        variables: { memberId },
+      },
+      {
+        headers: {
+          "content-type": "application/json",
+          "x-hasura-admin-secret": process.env.HASURA_ADMIN_SECRET,
+        },
+      }
+    );
+    const orders = data?.order?.map((v) => ({
+      title: v.title,
+      usedPoints: v.order_member_points_aggregate?.aggregate?.sum?.points || 0,
+      createdAt: dayjs(v.createdAt),
+    }));
+    const memberPoints =
+      data?.member_point?.map((v) => ({
+        id: v.id,
+        endedAt: v.ended_at,
+        points: v.points,
+        usedPoints:
+          v.order_member_points_aggregate?.aggregate?.sum?.points || 0,
+      })) || [];
+    const currentPoints = memberPoints
+      .filter((memberPoint) => dayjs(memberPoint.endedAt) >= dayjs())
+      .reduce(
+        (accum, memberPoint) =>
+          accum + memberPoint.points - memberPoint.usedPoints,
+        0
+      );
+    await client.replyMessage(event.replyToken, {
       type: "text",
-      text: `專屬連結：${pointUrl}`,
-    },
-    {
-      type: "image",
-      originalContentUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
-      previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
-    },
-  ]);
+      text: [
+        `目前點數：${currentPoints}`,
+        `-----------------`,
+        `點數紀錄：`,
+        ...memberPoints.map(
+          (memberPoint) =>
+            `${memberPoint.point} 點：${dayjs(memberPoint.endedAt).format(
+              "YYYY/MM/DD"
+            )} 到期，已使用 ${memberPoint.usedPoints} 點`
+        ),
+        `-----------------`,
+        `使用紀錄：`,
+        ...orders.map(
+          (order) =>
+            `${order.title} 於 ${dayjs(order.createdAt).format(
+              "YYYY/MM/DD"
+            )} 使用 ${order.usedPoints}`
+        ),
+      ].join("\n"),
+    });
+  } else {
+    await client.replyMessage(event.replyToken, {
+      type: "text",
+      text: `目前僅支援以下指令：check, code`,
+    });
+  }
 }
 // listen on port
 const port = process.env.PORT || 3000;
