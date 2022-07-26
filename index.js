@@ -1,5 +1,6 @@
 // index.js
 const line = require("@line/bot-sdk");
+const { default: axios } = require("axios");
 var express = require("express");
 const config = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
@@ -23,17 +24,35 @@ app.post("/callback", line.middleware(config), (req, res) => {
     });
 });
 // event handler
-function handleEvent(event, destination) {
-  // create a echoing text message
+async function handleEvent(event, destination) {
+  await axios.post(`https://emoji0701.hasura.app/v1/graphql`, {
+    query: `mutation INSERT_MEMBER($memberId: String!) { insert_member_one(object: {id: $memberId }) { id }}`,
+    variables: { memberId: destination },
+  });
+
   const pointUrl = `https://emoji0701.netlify.app?id=${destination}`;
-  const message = {
+  const shortenUrl = await axios.post(
+    "https://api.reurl.cc/shorten",
+    { url: pointUrl },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "reurl-api-key": process.env.REURL_API_KEY,
+      },
+    }
+  );
+  await client.replyMessage(event.replyToken, {
     type: "image",
-    originalContentUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
-    previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
-  };
-  console.log({ event, destination, pointUrl, message });
+    originalContentUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${shortenUrl}`,
+    previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${shortenUrl}`,
+  });
+  await client.replyMessage(event.replyToken, {
+    type: "text",
+    text: `專屬連結：${shortenUrl}`,
+  });
+
+  console.log({ event, destination, pointUrl, shortenUrl, message });
   // use reply API
-  return client.replyMessage(event.replyToken, message);
 }
 // listen on port
 const port = process.env.PORT || 3000;
