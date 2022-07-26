@@ -39,6 +39,7 @@ async function handleEvent(event, destination) {
     {
       headers: {
         "content-type": "application/json",
+        "x-hasura-admin-secret": process.env.HASURA_ADMIN_SECRET,
       },
     }
   );
@@ -55,7 +56,13 @@ async function handleEvent(event, destination) {
     },
   ]);
 
-  console.log({ event, destination, graphqlRes, pointUrl, pointUrl });
+  console.log({
+    event,
+    destination,
+    graphqlRes: JSON.stringify(graphqlRes),
+    pointUrl,
+    pointUrl,
+  });
   // use reply API
 }
 // listen on port
