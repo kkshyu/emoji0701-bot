@@ -1,6 +1,5 @@
 // index.js
 const line = require("@line/bot-sdk");
-const gql = require("gql");
 const { default: axios } = require("axios");
 var express = require("express");
 const config = {
@@ -24,13 +23,14 @@ app.post("/callback", line.middleware(config), (req, res) => {
       res.status(500).end();
     });
 });
+
 // event handler
 async function handleEvent(event, destination) {
   if (event.message.text === "code") {
     await axios.post(
       `https://emoji0701.hasura.app/v1/graphql`,
       {
-        query: gql`
+        query: `
           mutation INSERT_MEMBER($memberId: String!) {
             insert_member_one(
               object: { id: $memberId }
@@ -65,7 +65,7 @@ async function handleEvent(event, destination) {
     const { data } = await axios.post(
       `https://emoji0701.hasura.app/v1/graphql`,
       {
-        query: gql`
+        query: `
           query GET_MEMBER_POINTS($memberId: String!) {
             order(
               where: {
