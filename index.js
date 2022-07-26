@@ -13,8 +13,9 @@ const app = express();
 // register a webhook handler with middleware
 // about the middleware, please refer to doc
 app.post("/callback", line.middleware(config), (req, res) => {
-  console.log(req, res);
-  Promise.all(req.body.events.map((event) => handleEvent(event, destination)))
+  Promise.all(
+    req.body.events.map((event) => handleEvent(event, req.body.destination))
+  )
     .then((result) => res.json(result))
     .catch((err) => {
       console.error(err);
@@ -25,13 +26,14 @@ app.post("/callback", line.middleware(config), (req, res) => {
 function handleEvent(event, destination) {
   // create a echoing text message
   const pointUrl = `https://emoji0701.netlify.app?id=${destination}`;
-  const echo = {
+  const message = {
     type: "image",
     originalContentUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
     previewImageUrl: `https://api.qrserver.com/v1/create-qr-code/?data=${pointUrl}`,
   };
+  console.log({ event, destination, pointUrl, message });
   // use reply API
-  return client.replyMessage(event.replyToken, echo);
+  return client.replyMessage(event.replyToken, message);
 }
 // listen on port
 const port = process.env.PORT || 3000;
