@@ -16,7 +16,7 @@ const app = express();
 // about the middleware, please refer to doc
 app.post("/callback", line.middleware(config), (req, res) => {
   Promise.all(
-    req.body.events.map((event) => handleEvent(event, req.body.destination))
+    req.body.events.map((event) => handleEvent(event, event.source.userId))
   )
     .then((result) => res.json(result))
     .catch((err) => {
@@ -26,7 +26,7 @@ app.post("/callback", line.middleware(config), (req, res) => {
 });
 
 // event handler
-async function handleEvent(event, destination) {
+async function handleEvent(event, memberId) {
   if (event.message.text === "code") {
     await axios.post(
       `https://emoji0701.hasura.app/v1/graphql`,
@@ -41,7 +41,7 @@ async function handleEvent(event, destination) {
             }
           }
         `,
-        variables: { memberId: destination },
+        variables: { memberId },
       },
       {
         headers: {
@@ -50,7 +50,7 @@ async function handleEvent(event, destination) {
         },
       }
     );
-    const pointUrl = `https://emoji0701.netlify.app?id=${destination}`;
+    const pointUrl = `https://emoji0701.netlify.app?id=${memberId}`;
     await client.replyMessage(event.replyToken, [
       {
         type: "text",
@@ -103,7 +103,7 @@ async function handleEvent(event, destination) {
             }
           }
         `,
-        variables: { memberId: destination },
+        variables: { memberId },
       },
       {
         headers: {
